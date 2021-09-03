@@ -1,0 +1,16 @@
+import { NestFactory } from '@nestjs/core';
+import { SocketAdapter } from './adapters/socket.adapter';
+
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+
+  const app = await NestFactory.create(AppModule);
+  app.enableCors();
+
+  app.useWebSocketAdapter(new SocketAdapter(app));
+
+  await app.listen(8080);
+  console.log(`Application is running on: ${await app.getUrl()}`);
+}
+bootstrap();
