@@ -1,6 +1,6 @@
 import io from 'socket.io';
 
-import { Consumer, Producer, WebRtcTransport } from 'mediasoup/lib/types';
+import { Consumer, Producer, RtpCapabilities, WebRtcTransport } from 'mediasoup/lib/types';
 
 export interface IPeerConnection {
     peerId: string
@@ -22,7 +22,6 @@ export interface IRoomClient {
   id: string;
   io: io.Socket;
   media?: IMediasoupClient;
-  device: string;
 }
 
 export interface IMediasoupClient {
@@ -32,6 +31,12 @@ export interface IMediasoupClient {
   consumerTransport?: WebRtcTransport;
   consumersVideo?: Map<string, Consumer>;
   consumersAudio?: Map<string, Consumer>;
+}
+
+export interface IProducerTransport {
+  peerId: string;
+  forceTcp: boolean;
+  rtpCapabilities: RtpCapabilities
 }
 
 export interface IWorkerInfo {

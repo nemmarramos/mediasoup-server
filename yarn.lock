@@ -3635,7 +3635,7 @@ media-typer@0.3.0:
   resolved "https://registry.yarnpkg.com/media-typer/-/media-typer-0.3.0.tgz#8710d7af0aa626f8fffa1ce00168545263255748"
   integrity sha1-hxDXrwqmJvj/+hzgAWhUUmMlV0g=
 
-mediasoup@^3.8.3:
+mediasoup@3:
   version "3.8.3"
   resolved "https://registry.yarnpkg.com/mediasoup/-/mediasoup-3.8.3.tgz#da28ad8c1961bd56adda53f1fccabba4c1371aaa"
   integrity sha512-bkp6Ph2VTq+J0G4e4usbSqfGsHxbBAji6pK0UEhyPPUsyYad9cw9eV0vvSdPXQKLbbelhhLN2iO8DzYSFcF7Qw==

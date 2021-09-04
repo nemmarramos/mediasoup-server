@@ -34,7 +34,7 @@
     "config": "^3.3.6",
     "express": "^4.17.1",
     "install": "^0.13.0",
-    "mediasoup": "^3.8.3",
+    "mediasoup": "3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0"

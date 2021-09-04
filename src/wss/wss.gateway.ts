@@ -4,15 +4,16 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
-import { Socket, Server } from 'socket.io';
+import io, { Socket, Server } from 'socket.io';
 import * as mediasoup from 'mediasoup';
-import { WorkerSettings, Worker } from 'mediasoup/lib/types'
+import { WorkerSettings } from 'mediasoup/lib/types'
 import { types as mediasoupTypes } from "mediasoup";
+import { Worker } from 'mediasoup/lib/types';
 
-import { IPeerConnection } from './wss.interfaces';
+import { IPeerConnection, IProducerTransport } from './wss.interfaces';
 import { WssRoom } from './wss.room';
 
 const mediasoupSettings = config.get<IMediasoupSettings>('MEDIASOUP_SETTINGS');
@@ -41,7 +42,7 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         clientsCount: 0,
         roomsCount: 0,
         pid: worker.pid,
-        worker: worker as Worker,
+        worker: worker,
       };
 
       return acc;
@@ -74,7 +75,6 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         // this.updateWorkerStats();
 
         const index = this.getOptimalWorkerIndex();
-
         room = new WssRoom(this.workers[index].worker, index, peerId, this.server);
 
         await room.load();
@@ -84,24 +84,34 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         this.logger.log(`room ${peerId} created`);
       }
 
-      // await room.addClient(query, client);
+      // await room.addClient(p, client);
       const rtpCapabilities = room.getRouterRtpCapabilities() as mediasoupTypes.RtpCapabilities
       
       this.logger.log(`rtpCapabilities ${rtpCapabilities}`);
 
-      return {
-        rtpCapabilities
-      }
+      return rtpCapabilities
     } catch (error) {
       this.logger.error(error.message, error.stack, 'WssGateway - handleConnection');
     }
   }
 
   @SubscribeMessage('publishRoom')
-  async publishRoom(@MessageBody() data: IPeerConnection): Promise<mediasoupTypes.RtpCapabilities> {
+  async publishRoom(
+    @MessageBody() data: IPeerConnection,
+    @ConnectedSocket() socket: Socket,
+  ): Promise<mediasoupTypes.RtpCapabilities> {
     this.logger.log('publishRoom', data);
+    console.log('client', socket.id);
 
     return this.loadRoom(data)
+  }
+
+  @SubscribeMessage('createProducerTransport')
+  async createProducerTransport(@MessageBody() data: IProducerTransport): Promise<any> {
+    const room = this.rooms.get(data.peerId);
+    this.logger.log('room', room);
+
+    return room.createWebRtcTransport({ type: 'producer' }, data.peerId)
     // return true
   }
 
@@ -124,7 +134,7 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
   
-  handleConnection(client: Socket) {
+  handleConnection(client: io.Socket) {
     this.logger.log(`Client connected: ${client.id}`);
   }
 }
