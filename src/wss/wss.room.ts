@@ -114,7 +114,7 @@ export class WssRoom implements IRoom {
         }
     }
 
-    public async consume(data: IPeerTransport, peerId?: string) {
+    public async consume(data: IPeerTransport, peerId?: string): Promise<Object> {
         try {
             this.logger.log(`room ${this.room} consume peerId ${data.peerId}`);
             const user = this.clients.get(data.peerId);
