@@ -13,8 +13,9 @@ import { WorkerSettings } from 'mediasoup/lib/types'
 import { types as mediasoupTypes } from "mediasoup";
 import { Worker } from 'mediasoup/lib/types';
 
-import { IPeerConnection, IProducerTransport } from './wss.interfaces';
+import { IPeerConnection, IProducerConnectorTransport, IPeerTransport, IProduceTrack } from './wss.interfaces';
 import { WssRoom } from './wss.room';
+import { throwRoomNotFound } from 'src/common/errors';
 
 const mediasoupSettings = config.get<IMediasoupSettings>('MEDIASOUP_SETTINGS');
 
@@ -66,25 +67,25 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
   
 
-  private async loadRoom(peerConnection: IPeerConnection): Promise<mediasoupTypes.RtpCapabilities> {
+  private async loadRoom(peerConnection: IPeerConnection, socket: io.Socket): Promise<mediasoupTypes.RtpCapabilities> {
     try {
-      const { peerId } = peerConnection;
-      let room = this.rooms.get(peerId);
-
+      const { peerId, room: roomName} = peerConnection;
+      this.logger.debug('peerConnection', JSON.stringify(peerConnection))
+      let room = this.rooms.get(roomName);
       if (!room) {
         // this.updateWorkerStats();
 
         const index = this.getOptimalWorkerIndex();
-        room = new WssRoom(this.workers[index].worker, index, peerId, this.server);
+        room = new WssRoom(this.workers[index].worker, index, roomName, this.server);
 
         await room.load();
+        room.setHost({ io: socket, id: peerId, media: {} })
+        this.rooms.set(roomName, room);
 
-        this.rooms.set(peerId, room);
-
-        this.logger.log(`room ${peerId} created`);
+        this.logger.log(`room ${roomName} created`);
       }
 
-      // await room.addClient(p, client);
+      await room.addClient(peerId, socket);
       const rtpCapabilities = room.getRouterRtpCapabilities() as mediasoupTypes.RtpCapabilities
       
       this.logger.log(`rtpCapabilities ${rtpCapabilities}`);
@@ -95,24 +96,40 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     }
   }
 
-  @SubscribeMessage('publishRoom')
-  async publishRoom(
+  @SubscribeMessage('joinRoom')
+  async joinRoom(
     @MessageBody() data: IPeerConnection,
     @ConnectedSocket() socket: Socket,
   ): Promise<mediasoupTypes.RtpCapabilities> {
-    this.logger.log('publishRoom', data);
-    console.log('client', socket.id);
-
-    return this.loadRoom(data)
+    return this.loadRoom(data, socket)
   }
 
-  @SubscribeMessage('createProducerTransport')
-  async createProducerTransport(@MessageBody() data: IProducerTransport): Promise<any> {
-    const room = this.rooms.get(data.peerId);
-    this.logger.log('room', room);
+  @SubscribeMessage('createWebRTCTransport')
+  async createWebRTCTransport(@MessageBody() data: IPeerTransport): Promise<any> {
+    const room = this.rooms.get(data.room);
+    if (!room) return throwRoomNotFound(null)
+    return room.createWebRtcTransport({ type: data.type }, data.peerId)
+  }
 
-    return room.createWebRtcTransport({ type: 'producer' }, data.peerId)
-    // return true
+  @SubscribeMessage('consume')
+  async consume(@MessageBody() data: IPeerTransport): Promise<any> {
+    const room = this.rooms.get(data.room);
+    if (!room) return throwRoomNotFound(null)
+    return room.consume(data)
+  }
+
+  @SubscribeMessage('connectWebRTCTransport')
+  async connectWebRTCTransport(@MessageBody() data: IProducerConnectorTransport): Promise<any> {
+    const room = this.rooms.get(data.room);
+    if (!room) return throwRoomNotFound(null)
+    return room.connectWebRTCTransport(data)
+  }
+
+  @SubscribeMessage('produce')
+  produce(@MessageBody() data: IProduceTrack): Promise<string> {
+    const room = this.rooms.get(data.room);
+    if (room) return room.produce(data as IProduceTrack)
+    return Promise.resolve(null)
   }
 
   @SubscribeMessage('unpublishRoom')

@@ -1,6 +1,23 @@
 import io from 'socket.io';
 
-import { Consumer, Producer, RtpCapabilities, WebRtcTransport } from 'mediasoup/lib/types';
+import { Consumer, DtlsParameters, MediaKind, Producer, RtpCapabilities, WebRtcTransport } from 'mediasoup/lib/types';
+
+type UserType = 'producer' | 'consumer'
+
+export interface IProduceTrack {
+  rtpParameters: RTCRtpParameters
+  kind: MediaKind
+  room: string
+  peerId: string
+  paused: boolean
+}
+
+export interface IProducerConnectorTransport {
+  dtlsParameters: DtlsParameters
+  room: string
+  peerId: string
+  type: UserType
+}
 
 export interface IPeerConnection {
     peerId: string
@@ -33,10 +50,13 @@ export interface IMediasoupClient {
   consumersAudio?: Map<string, Consumer>;
 }
 
-export interface IProducerTransport {
+export interface IPeerTransport {
+  type: UserType
   peerId: string;
+  room: string;
   forceTcp: boolean;
   rtpCapabilities: RtpCapabilities
+  kind?: MediaKind
 }
 
 export interface IWorkerInfo {
