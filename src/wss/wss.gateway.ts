@@ -65,13 +65,14 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
       10
     );
   }
-  
 
   private async loadRoom(peerConnection: IPeerConnection, socket: io.Socket): Promise<mediasoupTypes.RtpCapabilities> {
     try {
       const { peerId, room: roomName} = peerConnection;
       this.logger.debug('peerConnection', JSON.stringify(peerConnection))
       let room = this.rooms.get(roomName);
+      this.logger.log('Checking room status')
+      this.logger.log('isLoaded', Boolean(room))
       if (!room) {
         // this.updateWorkerStats();
 
@@ -79,11 +80,21 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         room = new WssRoom(this.workers[index].worker, index, roomName, this.server);
 
         await room.load();
+
         room.setHost({ io: socket, id: peerId, media: {} })
         this.rooms.set(roomName, room);
 
         this.logger.log(`room ${roomName} created`);
       }
+
+      socket.on('disconnect', u => {
+        this.logger.log('user disconnected', u)
+        room.onPeerSocketDisconnect(peerId, isHost => {
+          if (isHost) {
+            this.rooms.delete(roomName)
+          }
+        })
+      })
 
       await room.addClient(peerId, socket);
       const rtpCapabilities = room.getRouterRtpCapabilities() as mediasoupTypes.RtpCapabilities
@@ -133,9 +144,11 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('unpublishRoom')
-  unpublishRoom(@MessageBody() data: any): Boolean {
+  unpublishRoom(@MessageBody() data: any): Promise<void> {
     this.logger.log('unpublishRoom', data);
-    return true
+    const room = this.rooms.get(data.room);
+    if (room) return room.close()
+    return Promise.resolve()
   }
 
   afterInit() {
