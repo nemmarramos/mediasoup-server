@@ -2,7 +2,7 @@ import config from 'config';
 import io from 'socket.io';
 
 import { types as mediasoupTypes } from "mediasoup";
-import { IMediasoupClient, IPeerTransport, IProducerConnectorTransport, IProduceTrack, IRoom, IRoomClient } from './wss.interfaces';
+import { IClientProfile, IMediasoupClient, IPeerTransport, IProducerConnectorTransport, IProduceTrack, IRoom, IRoomClient } from './wss.interfaces';
 import { Logger } from '@nestjs/common';
 import { ConsumerLayers, ConsumerScore, Producer, RouterOptions, Worker } from 'mediasoup/lib/types';
 import { EnhancedEventEmitter } from 'mediasoup/lib/EnhancedEventEmitter';
@@ -53,7 +53,8 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
 
     private getHostMediaClient(): IMediasoupClient {
       const hostClient = this.clients.get(this.host.id)
-      
+      // console.log('hostClient', hostClient)
+      // this.logger.debug('getHostMediaClient hostClient', JSON.stringify(hostClient))
       return hostClient && hostClient.media
     }
 
@@ -112,6 +113,10 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
             const user = this.clients.get(data.peerId);
 
             let fromProducer: Producer
+
+            this.host.io.emit('userJoined', {
+              user: user.profile
+            })
 
             // this.logger.log('hostClient', hostClient.media.producerVideo)
             this.logger.log('data.kind', data.kind)
@@ -233,6 +238,9 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
 
     public broadcast(client: io.Socket, event: string, msg: object): boolean {
       try {
+        this.logger.debug('name', this.name)
+        this.logger.debug('event', event)
+        this.logger.debug('msg', msg)
         return client.broadcast.to(this.name).emit(event, msg);
       } catch (error) {
         this.logger.error(error.message, error.stack, 'WssRoom - broadcast');
@@ -432,11 +440,10 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
         return this.router.rtpCapabilities;
       }
 
-      public async addClient(peerId: string, client: io.Socket): Promise<boolean> {
+      public async addClient(peerId: string, client: io.Socket, profile: IClientProfile): Promise<boolean> {
         try {
           this.logger.debug(`${peerId} connected to room ${this.name}`);
-    
-          this.clients.set(peerId, { io: client, id: peerId, media: {} });
+          this.clients.set(peerId, { io: client, id: peerId, profile, media: {} });
     
           client.join(this.name);
     
