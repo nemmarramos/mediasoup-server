@@ -13,7 +13,7 @@ import { WorkerSettings } from 'mediasoup/lib/types'
 import { types as mediasoupTypes } from "mediasoup";
 import { Worker } from 'mediasoup/lib/types';
 
-import { IPeerConnection, IProducerConnectorTransport, IPeerTransport, IProduceTrack } from './wss.interfaces';
+import { IPeerConnection, IProducerConnectorTransport, IPeerTransport, IProduceTrack, IRoomMessageWrapper } from './wss.interfaces';
 import { WssRoom } from './wss.room';
 import { throwRoomNotFound } from 'src/common/errors';
 
@@ -68,7 +68,7 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
   private async loadRoom(peerConnection: IPeerConnection, socket: io.Socket): Promise<mediasoupTypes.RtpCapabilities> {
     try {
-      const { peerId, room: roomName} = peerConnection;
+      const { peerId, room: roomName, profile } = peerConnection;
       this.logger.debug('peerConnection', JSON.stringify(peerConnection))
       let room = this.rooms.get(roomName);
       this.logger.log('Checking room status')
@@ -81,7 +81,7 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
 
         await room.load();
 
-        room.setHost({ io: socket, id: peerId, media: {} })
+        room.setHost({ io: socket, id: peerId, profile, media: {} })
         this.rooms.set(roomName, room);
 
         this.logger.log(`room ${roomName} created`);
@@ -96,7 +96,7 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
         })
       })
 
-      await room.addClient(peerId, socket);
+      await room.addClient(peerId, socket, profile);
       const rtpCapabilities = room.getRouterRtpCapabilities() as mediasoupTypes.RtpCapabilities
       
       this.logger.log(`rtpCapabilities ${rtpCapabilities}`);
@@ -121,6 +121,17 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     if (!room) return throwRoomNotFound(null)
     return room.createWebRtcTransport({ type: data.type }, data.peerId)
   }
+
+  @SubscribeMessage('sendMessage')
+  async onNewMessage(@MessageBody() data: IRoomMessageWrapper): Promise<any> {
+    const room = this.rooms.get(data.room);
+    if (!room) return throwRoomNotFound(null)
+    return room.broadcastAll('newMessage', {
+      ...data.message,
+      room: data.room
+    })
+  }
+
 
   @SubscribeMessage('consume')
   async consume(@MessageBody() data: IPeerTransport): Promise<any> {

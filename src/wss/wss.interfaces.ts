@@ -22,11 +22,23 @@ export interface IProducerConnectorTransport {
 export interface IPeerConnection {
     peerId: string
     room: string
+    profile: IClientProfile
 }
 
 export interface IRoom {
     load(): Promise<void>
-    close(): Promise<void>
+    close(): 
+    Promise<void>
+}
+
+export interface IRoomMessageWrapper {
+  room: string;
+  message: IRoomMessage;
+}
+
+export interface IRoomMessage {
+  content: string
+  from: IClientProfile
 }
 
 export interface IClientQuery {
@@ -35,10 +47,18 @@ export interface IClientQuery {
   readonly device: string;
 }
 
+export interface IClientProfile {
+  username: string;
+  firstName: string;
+  lastName: string;
+  picture: string;
+}
+
 export interface IRoomClient {
   id: string;
   io: io.Socket;
   media?: IMediasoupClient;
+  profile: IClientProfile
 }
 
 export interface IMediasoupClient {
