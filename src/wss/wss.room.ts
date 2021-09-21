@@ -265,6 +265,7 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
 
       if (isHost) {
         this.logger.log('room host left')
+        this.broadcastAll('roomClosed', null)
         this.close()
       }
 
