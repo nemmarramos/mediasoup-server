@@ -103,6 +103,7 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
             type: data.type,
           };
         } catch (error) {
+          console.error(error)
           this.logger.error(error.message, error.stack, 'MediasoupHelper - createWebRtcTransport');
         }
     }
