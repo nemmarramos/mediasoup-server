@@ -47,6 +47,7 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
                 });
             });
         } catch (error) {
+            console.error(error)
             this.logger.error(error.message, error.stack, 'WssRoom - configureWorker');
         }
     }
