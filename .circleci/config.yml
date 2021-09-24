@@ -1,0 +1,34 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/mediasoup-server
+    docker:
+      - image: circleci/node:12.16.3
+    steps:
+      - run:
+          name: update-npm
+          command: 'sudo npm install -g npm@latest'
+
+  deploy:
+    working_directory: ~/mediasoup-server
+    docker:
+    - image: circleci/node:12.16.3
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - d5:31:20:76:b9:44:fc:a9:22:a7:ce:f1:01:43:f8:51
+      - run:
+          name: Deploy over SSH
+          command: ssh centos@dev.powermeeter.com -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "cd ~/mediasoup-server; pm2 stop all; git pull; yarn; yarn build; pm2 restart all";
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
