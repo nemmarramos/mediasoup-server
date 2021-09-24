@@ -16,7 +16,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - 73:cb:e0:ae:55:7b:c7:c4:10:b7:5c:ad:01:d3:b2:b7
+            - d5:31:20:76:b9:44:fc:a9:22:a7:ce:f1:01:43:f8:51
       - run:
           name: Deploy over SSH
           command: ssh centos@dev.powermeeter.com -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "cd ~/mediasoup-server; pm2 stop all; git pull; yarn; yarn build; pm2 restart all";
