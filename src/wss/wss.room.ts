@@ -116,10 +116,6 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
 
             let fromProducer: Producer
 
-            this.host.io.emit('userJoined', {
-              user: user.profile
-            })
-
             // this.logger.log('hostClient', hostClient.media.producerVideo)
             this.logger.log('data.kind', data.kind)
             this.logger.log('this.host.id',  this.host.id)
@@ -128,6 +124,11 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
             
             if (data.kind === 'video') {
                 fromProducer = hostMediaClient.producerVideo
+
+                this.host.io.emit('userJoined', {
+                  user: user.profile
+                })
+
             }
           
             if (data.kind === 'audio') {
