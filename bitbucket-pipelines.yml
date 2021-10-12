@@ -1,0 +1,26 @@
+#  Template NodeJS build
+
+#  This template allows you to validate your NodeJS code.
+#  The workflow allows running tests and code linting on the default branch.
+
+image: node:12.16.3
+
+pipelines:
+  branches:
+    master:
+     - step:
+          name: Build and Test
+          caches:
+            - node
+          script:
+            - npm install
+            - npm test
+     - step:
+         name: Deploy to production
+         deployment: production
+         script:
+           - pipe: atlassian/ssh-run:0.2.2
+             variables:
+               SSH_USER: 'centos'
+               SERVER: 'dev.powermeeter.com'
+               COMMAND: 'cd ~/mediasoup-server; pm2 stop all; git pull; npm ci; npm run build; pm2 restart all;'
