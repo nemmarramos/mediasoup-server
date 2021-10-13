@@ -378,9 +378,6 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
             this.closeMediaClient(media);
           }
         });
-        this.clients.clear();
-        this.audioLevelObserver.close();
-        this.router.close();
 
         var params = {
           DelaySeconds: 1,
@@ -403,6 +400,9 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
         })
 
         this.logger.debug(`messageId => ${messageId}`)
+        this.clients.clear();
+        this.audioLevelObserver.close();
+        this.router.close();
   
         this.logger.debug(`room ${this.name} closed`);
       } catch (error) {
