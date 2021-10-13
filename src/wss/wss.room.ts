@@ -390,12 +390,13 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
         this.logger.debug(`sqs params => ${JSON.stringify(params)}`)
 
         // Send sqs event
-        const messageId = await new Promise(resolve => {
+        const messageId = await new Promise((resolve, reject) => {
           sqs.sendMessage(params, function(err, data) {
             if (err) {
-              console.log("Error", err);
+              this.logger.debug("Error", err);
+              reject(err)
             } else {
-              console.log("Success", data.MessageId);
+              this.logger.debug("Success", data.MessageId);
               resolve(data.MessageId)
             }
           });
