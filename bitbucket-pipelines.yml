@@ -23,4 +23,4 @@ pipelines:
              variables:
                SSH_USER: 'centos'
                SERVER: 'dev.powermeeter.com'
-               COMMAND: 'cd ~/mediasoup-server; pm2 stop all; git pull; npm ci; npm run build; pm2 restart all;'
+               COMMAND: 'cd ~/mediasoup-server; pm2 stop all; git pull; npm ci; scl enable devtoolset-7 bash; npm run build; pm2 restart all;'
