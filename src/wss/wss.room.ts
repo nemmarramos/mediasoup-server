@@ -258,6 +258,13 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
       }
     }
 
+    public broadcastToHost(event: string, msg: object): boolean {
+      try {
+        return this.wssServer.to(this.host.io.id).emit(event, msg);
+      } catch (error) {
+        this.logger.error(error.message, error.stack, 'WssRoom - broadcastAll');
+      }
+    }
     
     public broadcastAll(event: string, msg: object): boolean {
       try {
@@ -423,6 +430,15 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
       this.broadcastAll('onGiftReceived', { gift, user })
     }
 
+    public async requestVideoChat(peerId: string): Promise<void> {
+      this.logger.log('requestVideoChat peerId', peerId);
+      const user = this.clients.get(peerId);
+      this.broadcastToHost('onNewVideoChatRequest', {
+        peerId,
+        user: user.profile
+      })
+    }
+    
     public setHost(user: IRoomClient) {
         this.host = user;
     }
