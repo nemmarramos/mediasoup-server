@@ -41,6 +41,12 @@ export interface IRoomMessage {
   from: IClientProfile
 }
 
+export interface IGift {
+  code: string;
+  name: string;
+  url: string
+}
+
 export interface IClientQuery {
   readonly user_id: string;
   readonly session_id: string;

@@ -162,6 +162,14 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     return Promise.resolve()
   }
 
+  @SubscribeMessage('sendGift')
+  sendGift(@MessageBody() data: any): Promise<void> {
+    this.logger.log('sendGift', data);
+    const room = this.rooms.get(data.room);
+    if (room) return room.sendGift(data.gift, data.peerId)
+    return Promise.resolve()
+  }
+
   afterInit() {
     this.logger.log('Init');
   }

@@ -3,7 +3,7 @@ import io from 'socket.io';
 import AWS from 'aws-sdk';
 
 import { types as mediasoupTypes } from "mediasoup";
-import { IClientProfile, IMediasoupClient, IPeerTransport, IProducerConnectorTransport, IProduceTrack, IRoom, IRoomClient } from './wss.interfaces';
+import { IClientProfile, IGift, IMediasoupClient, IPeerTransport, IProducerConnectorTransport, IProduceTrack, IRoom, IRoomClient } from './wss.interfaces';
 import { Logger } from '@nestjs/common';
 import { ConsumerLayers, ConsumerScore, Producer, RouterOptions, Worker } from 'mediasoup/lib/types';
 import { EnhancedEventEmitter } from 'mediasoup/lib/EnhancedEventEmitter';
@@ -416,6 +416,11 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
         } catch (error) {
             this.logger.log("Error", error)
         }
+    }
+
+    public async sendGift(gift: IGift, peerId: string): Promise<void> {
+      const user = this.clients.get(peerId);
+      this.broadcastAll('onGiftReceived', { gift, user })
     }
 
     public setHost(user: IRoomClient) {
