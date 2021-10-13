@@ -1,5 +1,6 @@
 import config from 'config';
 import io from 'socket.io';
+import AWS from 'aws-sdk';
 
 import { types as mediasoupTypes } from "mediasoup";
 import { IClientProfile, IMediasoupClient, IPeerTransport, IProducerConnectorTransport, IProduceTrack, IRoom, IRoomClient } from './wss.interfaces';
@@ -9,6 +10,13 @@ import { EnhancedEventEmitter } from 'mediasoup/lib/EnhancedEventEmitter';
 
 const mediasoupSettings = config.get<IMediasoupSettings>('MEDIASOUP_SETTINGS');
 type TPeer = 'producer' | 'consumer';
+
+AWS.config.update({region: 'eu-west-2' });
+
+// Create an SQS service object
+const sqs = new AWS.SQS({
+    apiVersion: '2012-11-05',
+});
 
 export class WssRoom extends EnhancedEventEmitter implements IRoom {
     public readonly clients: Map<string, IRoomClient> = new Map();
@@ -373,6 +381,21 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
         this.clients.clear();
         this.audioLevelObserver.close();
         this.router.close();
+
+        var params = {
+          DelaySeconds: 1,
+          MessageBody: this.name,
+          QueueUrl: process.env.STREAM_ENDED_EVENT_QUEUE || 'http://0.0.0.0:9324/queue/StreamEndedEventQueue',
+        };
+        
+        // Send sqs event
+        sqs.sendMessage(params, function(err, data) {
+          if (err) {
+            console.log("Error", err);
+          } else {
+            console.log("Success", data.MessageId);
+          }
+        });
   
         this.logger.debug(`room ${this.name} closed`);
       } catch (error) {
