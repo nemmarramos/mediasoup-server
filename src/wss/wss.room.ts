@@ -430,13 +430,14 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
       this.broadcastAll('onGiftReceived', { gift, user })
     }
 
-    public async requestVideoChat(peerId: string): Promise<void> {
+    public requestVideoChat(peerId: string): Promise<boolean> {
       this.logger.log('requestVideoChat peerId', peerId);
       const user = this.clients.get(peerId);
       this.broadcastToHost('onNewVideoChatRequest', {
         peerId,
         user: user.profile
       })
+      return Promise.resolve(true)
     }
     
     public setHost(user: IRoomClient) {

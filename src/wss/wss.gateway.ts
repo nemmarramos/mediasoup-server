@@ -171,11 +171,11 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('requestVideoChat')
-  requestVideoChat(@MessageBody() data: any): Promise<void> {
+  requestVideoChat(@MessageBody() data: any): Promise<any> {
     this.logger.log('requestVideoChat', data);
     const room = this.rooms.get(data.room);
-    if (room) return room.requestVideoChat(data.peerId)
-    return Promise.resolve()
+    if (!room) return throwRoomNotFound(null)
+    return room.requestVideoChat(data.peerId)
   }
   
   afterInit() {
