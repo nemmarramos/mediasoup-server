@@ -387,7 +387,8 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
           MessageBody: this.name,
           QueueUrl: process.env.STREAM_ENDED_EVENT_QUEUE || 'http://0.0.0.0:9324/queue/StreamEndedEventQueue',
         };
-        
+        this.logger.debug(`sqs params => ${JSON.stringify(params)}`)
+
         // Send sqs event
         const messageId = await new Promise(resolve => {
           sqs.sendMessage(params, function(err, data) {
