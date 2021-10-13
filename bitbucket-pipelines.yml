@@ -13,7 +13,7 @@ pipelines:
           caches:
             - node
           script:
-            - npm install
+            - npm ci
             - npm test
      - step:
          name: Deploy to production
@@ -23,4 +23,4 @@ pipelines:
              variables:
                SSH_USER: 'centos'
                SERVER: 'dev.powermeeter.com'
-               COMMAND: 'cd ~/mediasoup-server; pm2 stop all; git pull; scl enable devtoolset-7 bash; npm ci; npm run build; pm2 restart all;'
+               COMMAND: 'cd ~/mediasoup-server; pm2 stop all; git pull; source scl_source enable devtoolset-7; npm ci; npm run build; pm2 restart all;'
