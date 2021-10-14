@@ -163,10 +163,12 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
   }
 
   @SubscribeMessage('sendGift')
-  sendGift(@MessageBody() data: any): Promise<void> {
+  async sendGift(@MessageBody() data: any): Promise<void> {
     this.logger.log('sendGift', data);
     const room = this.rooms.get(data.room);
-    if (room) return room.sendGift(data.gift, data.peerId)
+    if (!room) return throwRoomNotFound(null)
+
+    await room.sendGift(data.gift, data.peerId)
     return Promise.resolve()
   }
 
