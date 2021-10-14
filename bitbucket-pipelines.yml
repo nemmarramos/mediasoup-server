@@ -13,7 +13,7 @@ pipelines:
           caches:
             - node
           script:
-            - npm ci
+            - npm i
             - npm test
      - step:
          name: Deploy to production
