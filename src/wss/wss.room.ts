@@ -1,6 +1,7 @@
 import config from 'config';
 import io from 'socket.io';
 import AWS from 'aws-sdk';
+import shortid from 'shortid';
 
 import { types as mediasoupTypes } from "mediasoup";
 import { IClientProfile, IGift, IMediasoupClient, IPeerTransport, IProducerConnectorTransport, IProduceTrack, IRoom, IRoomClient } from './wss.interfaces';
@@ -19,8 +20,9 @@ const sqs = new AWS.SQS({
 });
 
 export class WssRoom extends EnhancedEventEmitter implements IRoom {
-    public readonly clients: Map<string, IRoomClient> = new Map();
-    public router: mediasoupTypes.Router;
+  public readonly clients: Map<string, IRoomClient> = new Map();
+  public readonly activeCalls: Map<string, IRoomClient> = new Map();
+  public router: mediasoupTypes.Router;
     public audioLevelObserver: mediasoupTypes.AudioLevelObserver;
     private logger: Logger = new Logger('WssRoom');
     private host: IRoomClient;
@@ -58,13 +60,6 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
             console.error(error)
             this.logger.error(error.message, error.stack, 'WssRoom - configureWorker');
         }
-    }
-
-    private getHostMediaClient(): IMediasoupClient {
-      const hostClient = this.clients.get(this.host.id)
-      // console.log('hostClient', hostClient)
-      // this.logger.debug('getHostMediaClient hostClient', JSON.stringify(hostClient))
-      return hostClient && hostClient.media
     }
 
     public async createWebRtcTransport(data: { type: TPeer }, peerId: string): Promise<object> {
@@ -119,7 +114,7 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
     public async consume(data: IPeerTransport): Promise<Object> {
         try {
             const { peerId } = data;
-            this.logger.log(`room ${this.name} consume peerId ${peerId}`);
+            this.logger.log(`room ${this.name} consumer peerId ${peerId}`);
             const user = this.clients.get(data.peerId);
 
             let fromProducer: Producer
@@ -127,23 +122,27 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
             // this.logger.log('hostClient', hostClient.media.producerVideo)
             this.logger.log('data.kind', data.kind)
             this.logger.log('this.host.id',  this.host.id)
+            this.logger.log('data.toConsumePeerId', data.toConsumePeerId)
 
-            const hostMediaClient = this.getHostMediaClient()
+            const userMediaClient = data.toConsumePeerId ? this.clients.get(data.toConsumePeerId).media : this.host.media
             
             if (data.kind === 'video') {
-                fromProducer = hostMediaClient.producerVideo
+                fromProducer = userMediaClient.producerVideo
 
                 this.host.io.emit('userJoined', {
                   user: user.profile
                 })
-
             }
           
             if (data.kind === 'audio') {
-                fromProducer = hostMediaClient.producerAudio
+                fromProducer = userMediaClient.producerAudio
             }
 
             const { rtpCapabilities } = this.router
+
+            this.logger.debug(`fromProducer: ${fromProducer}`);
+            this.logger.debug(`rtpCapabilities: ${rtpCapabilities}`);
+
             if (
                 !fromProducer ||
                 !rtpCapabilities ||
@@ -153,7 +152,7 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
                 })
               ) {
                 throw new Error(
-                  `Couldn't consume ${data.kind} with 'peerId'=${user.id} and 'room_id'=${this.name}`
+                  `Couldn't consume ${data.kind} with 'peerId'=${user.id} and 'room'=${this.name}`
                 );
             }
 
@@ -364,6 +363,8 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
               await this.audioLevelObserver.addProducer({ producerId: producer.id });
           }
 
+          this.broadcast(user.io, 'onNewProducer', { peerId: data.peerId, producerId: producer.id })
+
           return producer.id
         } catch (error) {
             this.logger.log("Error", error)
@@ -439,7 +440,16 @@ export class WssRoom extends EnhancedEventEmitter implements IRoom {
       })
       return Promise.resolve(true)
     }
-    
+
+    public acceptVideoChatRequest(peerId: string): Promise<boolean> {
+      this.logger.log('acceptVideoChatRequest peerId', peerId);
+      const user = this.clients.get(peerId);
+      const connectionId = shortid.generate()
+      this.activeCalls.set(connectionId, user);
+      user.io.emit('videoChatRequestAccepted', { connectionId })
+      return Promise.resolve(connectionId)
+    }
+
     public setHost(user: IRoomClient) {
         this.host = user;
     }

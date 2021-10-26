@@ -79,6 +79,7 @@ export interface IMediasoupClient {
 export interface IPeerTransport {
   type: UserType
   peerId: string;
+  toConsumePeerId?: string;
   room: string;
   forceTcp: boolean;
   rtpCapabilities: RtpCapabilities

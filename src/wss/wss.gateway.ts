@@ -179,6 +179,15 @@ export class WssGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     if (!room) return throwRoomNotFound(null)
     return room.requestVideoChat(data.peerId)
   }
+
+  @SubscribeMessage('acceptVideoChatRequest')
+  acceptVideoChatRequest(@MessageBody() data: any): Promise<any> {
+    this.logger.log('acceptVideoChatRequest', data);
+    const room = this.rooms.get(data.room);
+    if (!room) return throwRoomNotFound(null)
+    return room.acceptVideoChatRequest(data.peerId)
+  }
+
   
   afterInit() {
     this.logger.log('Init');
