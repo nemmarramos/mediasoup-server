@@ -15,9 +15,10 @@ pipelines:
           script:
             - npm i
             - npm test
+    develop:
      - step:
-         name: Deploy to production
-         deployment: production
+         name: Deploy to development server
+         deployment: development
          script:
            - pipe: atlassian/ssh-run:0.2.2
              variables:
