@@ -1,34 +1,40 @@
 import io from 'socket.io';
 
-import { Consumer, DtlsParameters, MediaKind, Producer, RtpCapabilities, WebRtcTransport } from 'mediasoup/lib/types';
+import {
+  Consumer,
+  DtlsParameters,
+  MediaKind,
+  Producer,
+  RtpCapabilities,
+  WebRtcTransport,
+} from 'mediasoup/lib/types';
 
-type UserType = 'producer' | 'consumer'
+type UserType = 'producer' | 'consumer';
 
 export interface IProduceTrack {
-  rtpParameters: RTCRtpParameters
-  kind: MediaKind
-  room: string
-  peerId: string
-  paused: boolean
+  rtpParameters: RTCRtpParameters;
+  kind: MediaKind;
+  room: string;
+  peerId: string;
+  paused: boolean;
 }
 
 export interface IProducerConnectorTransport {
-  dtlsParameters: DtlsParameters
-  room: string
-  peerId: string
-  type: UserType
+  dtlsParameters: DtlsParameters;
+  room: string;
+  peerId: string;
+  type: UserType;
 }
 
 export interface IPeerConnection {
-    peerId: string
-    room: string
-    profile: IClientProfile
+  peerId: string;
+  room: string;
+  profile: IClientProfile;
 }
 
 export interface IRoom {
-    load(): Promise<void>
-    close(): 
-    Promise<void>
+  load(): Promise<void>;
+  close(): Promise<void>;
 }
 
 export interface IRoomMessageWrapper {
@@ -37,14 +43,14 @@ export interface IRoomMessageWrapper {
 }
 
 export interface IRoomMessage {
-  content: string
-  from: IClientProfile
+  content: string;
+  from: IClientProfile;
 }
 
 export interface IGift {
   code: string;
   name: string;
-  url: string
+  url: string;
 }
 
 export interface IClientQuery {
@@ -64,7 +70,7 @@ export interface IRoomClient {
   id: string;
   io: io.Socket;
   media?: IMediasoupClient;
-  profile: IClientProfile
+  profile: IClientProfile;
 }
 
 export interface IMediasoupClient {
@@ -77,13 +83,13 @@ export interface IMediasoupClient {
 }
 
 export interface IPeerTransport {
-  type: UserType
+  type: UserType;
   peerId: string;
   toConsumePeerId?: string;
   room: string;
   forceTcp: boolean;
-  rtpCapabilities: RtpCapabilities
-  kind?: MediaKind
+  rtpCapabilities: RtpCapabilities;
+  kind?: MediaKind;
 }
 
 export interface IWorkerInfo {

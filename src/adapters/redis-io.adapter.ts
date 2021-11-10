@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { RedisClient } from 'redis';
@@ -6,8 +6,8 @@ import { ServerOptions } from 'socket.io';
 import { createAdapter } from 'socket.io-redis';
 
 const pubClient = new RedisClient({
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
 });
 const subClient = pubClient.duplicate();
 const redisAdapter = createAdapter({ pubClient, subClient });
